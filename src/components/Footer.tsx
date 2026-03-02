@@ -13,7 +13,7 @@ const footerLinks = {
     { label: 'Donate Food', href: '/donate-food' },
     { label: 'Track Donations', href: '/track' },
     { label: 'Donate Money', href: '/donate-money' },
-    { label: 'FAQ', href: '/#features' },
+    { label: 'FAQ', href: '/faq' },
   ],
 };
 
