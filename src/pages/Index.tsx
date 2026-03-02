@@ -90,7 +90,7 @@ export default function LandingPage() {
             <Button
               size="lg"
               variant="outline"
-              className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 font-bold text-base px-8"
+              className="border-primary-foreground text-primary-foreground bg-transparent hover:bg-primary-foreground/10 font-bold text-base px-8"
               onClick={() => navigate(user ? '/track' : '/signup')}
             >
               Receive Food
