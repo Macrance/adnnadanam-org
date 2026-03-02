@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Heart, CreditCard, Smartphone } from 'lucide-react';
+import { Heart, CreditCard, Smartphone, Building2, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function DonateMoneyPage() {
@@ -11,6 +11,7 @@ export default function DonateMoneyPage() {
   const [method, setMethod] = useState('');
   const [form, setForm] = useState({ name: '', email: '', phone: '', cardNumber: '', expiry: '', cvv: '', upiId: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [copied, setCopied] = useState('');
 
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
@@ -102,6 +103,7 @@ export default function DonateMoneyPage() {
                 <SelectContent>
                   <SelectItem value="card"><span className="flex items-center gap-2"><CreditCard className="h-4 w-4" />Credit/Debit Card</span></SelectItem>
                   <SelectItem value="upi"><span className="flex items-center gap-2"><Smartphone className="h-4 w-4" />UPI</span></SelectItem>
+                  <SelectItem value="bank"><span className="flex items-center gap-2"><Building2 className="h-4 w-4" />Bank Transfer (NEFT/IMPS)</span></SelectItem>
                 </SelectContent>
               </Select>
               {errors.method && <p className="text-destructive text-xs mt-1">{errors.method}</p>}
@@ -134,6 +136,43 @@ export default function DonateMoneyPage() {
                 <Label>UPI ID</Label>
                 <Input value={form.upiId} onChange={e => set('upiId', e.target.value)} placeholder="yourname@upi" />
                 {errors.upiId && <p className="text-destructive text-xs mt-1">{errors.upiId}</p>}
+              </div>
+            )}
+
+            {method === 'bank' && (
+              <div className="p-5 bg-muted rounded-lg space-y-3">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" /> Bank Transfer Details
+                </h3>
+                <p className="text-xs text-muted-foreground">Transfer the donation amount to the following account and share the transaction reference with us.</p>
+                {[
+                  { label: 'Account Name', value: 'Annadanam Foundation Trust' },
+                  { label: 'Account Number', value: '920020012345678' },
+                  { label: 'Bank Name', value: 'State Bank of India (SBI)' },
+                  { label: 'Branch', value: 'Mumbai Main Branch' },
+                  { label: 'IFSC Code', value: 'SBIN0000300' },
+                  { label: 'Account Type', value: 'Current Account' },
+                  { label: 'UPI ID', value: 'annadanam@sbi' },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center justify-between bg-background rounded px-3 py-2 border border-border">
+                    <div>
+                      <span className="text-xs text-muted-foreground block">{item.label}</span>
+                      <span className="text-sm font-medium">{item.value}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-primary transition-colors p-1"
+                      onClick={() => {
+                        navigator.clipboard.writeText(item.value);
+                        setCopied(item.label);
+                        setTimeout(() => setCopied(''), 2000);
+                        toast.success(`${item.label} copied!`);
+                      }}
+                    >
+                      {copied === item.label ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
 
