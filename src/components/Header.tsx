@@ -94,9 +94,6 @@ export default function Header() {
           ) : (
             <>
               <Button variant="outline" onClick={() => navigate('/login')}>Login</Button>
-              <Button className="bg-secondary text-secondary-foreground hover:bg-secondary/90" onClick={() => navigate('/signup')}>
-                Join Now
-              </Button>
             </>
           )}
         </div>
@@ -128,7 +125,6 @@ export default function Header() {
             ) : (
               <>
                 <Button variant="outline" className="w-full" onClick={() => { setMobileOpen(false); navigate('/login'); }}>Login</Button>
-                <Button className="w-full bg-secondary text-secondary-foreground" onClick={() => { setMobileOpen(false); navigate('/signup'); }}>Join Now</Button>
               </>
             )}
           </div>
