@@ -19,7 +19,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
-// Fix leaflet marker icons
+/* ---------------- FIX 1: Leaflet Icon ---------------- */
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -30,11 +30,8 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Status configuration
-const statusConfig: Record<
-  Donation["status"],
-  { label: string; color: string; icon: any }
-> = {
+/* ---------------- SAFE STATUS CONFIG ---------------- */
+const statusConfig = {
   pending: {
     label: "Pending Pickup",
     color: "bg-yellow-100 text-yellow-800",
@@ -57,7 +54,7 @@ const statusConfig: Record<
   },
 };
 
-const statusSteps: Donation["status"][] = [
+const statusSteps = [
   "pending",
   "picked",
   "in_transit",
@@ -68,7 +65,7 @@ export default function TrackPage() {
   const { user, donations, updateDonationStatus } = useAuth();
   const navigate = useNavigate();
 
-  // ✅ Safe redirect (NO blank page issue)
+  /* ---------------- FIX 2: SAFE REDIRECT ---------------- */
   useEffect(() => {
     if (!user) {
       navigate("/login");
@@ -77,20 +74,26 @@ export default function TrackPage() {
 
   if (!user) return null;
 
+  /* ---------------- FIX 3: SAFE DONATIONS ---------------- */
+  const safeDonations = donations || [];
+
   const myDonations =
     user.role === "admin"
-      ? donations || []
-      : (donations || []).filter(
+      ? safeDonations
+      : safeDonations.filter(
           (d) =>
-            d.donorId === user.id ||
-            d.recipientId === user.id
+            d?.donorId === user.id ||
+            d?.recipientId === user.id
         );
 
+  /* ---------------- FIX 4: SAFE MAP CENTER ---------------- */
   const demoCenter: [number, number] = [19.076, 72.8777];
 
   return (
     <div className="min-h-[80vh] py-12">
       <div className="container">
+
+        {/* Header */}
         <div className="flex justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold">
@@ -105,7 +108,7 @@ export default function TrackPage() {
           </Button>
         </div>
 
-        {/* MAP */}
+        {/* ---------------- MAP ---------------- */}
         <div
           className="mb-8 rounded-lg overflow-hidden border"
           style={{ height: 350 }}
@@ -120,30 +123,39 @@ export default function TrackPage() {
               attribution="&copy; OpenStreetMap contributors"
             />
 
-            {myDonations.map((d, i) => (
-              <Marker
-                key={d.id}
-                position={[
-                  demoCenter[0] + i * 0.01,
-                  demoCenter[1] + i * 0.01,
-                ]}
-              >
-                <Popup>
-                  <strong>{d.donorName || "Donor"}</strong>
-                  <br />
-                  {d.foodType || "Food"} ·{" "}
-                  {d.quantity || 0} servings
-                  <br />
-                  Status:{" "}
-                  {statusConfig[d.status]?.label ||
-                    "Pending"}
-                </Popup>
-              </Marker>
-            ))}
+            {myDonations.map((d, i) => {
+              /* -------- FIX 5: SAFE STATUS -------- */
+              const safeStatus =
+                statusConfig[d?.status]
+                  ? d.status
+                  : "pending";
+
+              return (
+                <Marker
+                  key={d?.id || i}
+                  position={[
+                    demoCenter[0] + i * 0.01,
+                    demoCenter[1] + i * 0.01,
+                  ]}
+                >
+                  <Popup>
+                    <strong>
+                      {d?.donorName || "Donor"}
+                    </strong>
+                    <br />
+                    {d?.foodType || "Food"} ·{" "}
+                    {d?.quantity || 0} servings
+                    <br />
+                    Status:{" "}
+                    {statusConfig[safeStatus].label}
+                  </Popup>
+                </Marker>
+              );
+            })}
           </MapContainer>
         </div>
 
-        {/* DONATION LIST */}
+        {/* ---------------- DONATION LIST ---------------- */}
         {myDonations.length === 0 ? (
           <div className="text-center py-16 border rounded-lg">
             <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -158,21 +170,28 @@ export default function TrackPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {myDonations.map((d) => {
+            {myDonations.map((d, index) => {
+              /* -------- FIX 6: SAFE STATUS -------- */
+              const safeStatus =
+                statusConfig[d?.status]
+                  ? d.status
+                  : "pending";
+
               const cfg =
-                statusConfig[d.status] ||
-                statusConfig.pending;
-              const StatusIcon = cfg.icon;
+                statusConfig[safeStatus];
+
               const currentStep =
-                statusSteps.indexOf(d.status);
+                statusSteps.indexOf(safeStatus);
+
+              const StatusIcon = cfg.icon;
 
               return (
                 <div
-                  key={d.id}
+                  key={d?.id || index}
                   className="p-6 border rounded-lg"
                 >
                   <div className="flex gap-4">
-                    {d.imageUrl && (
+                    {d?.imageUrl && (
                       <img
                         src={d.imageUrl}
                         alt="Food"
@@ -183,7 +202,7 @@ export default function TrackPage() {
                     <div className="flex-1">
                       <div className="flex gap-2 items-center mb-2">
                         <h3 className="font-semibold">
-                          {d.foodType || "Food"}
+                          {d?.foodType || "Food"}
                         </h3>
                         <span
                           className={`text-xs px-2 py-1 rounded ${cfg.color}`}
@@ -195,11 +214,12 @@ export default function TrackPage() {
 
                       <div className="text-sm text-muted-foreground space-y-1">
                         <div>
-                          Quantity: {d.quantity || 0}
+                          Quantity:{" "}
+                          {d?.quantity || 0}
                         </div>
                         <div>
                           Pickup Time:{" "}
-                          {d.pickupTime
+                          {d?.pickupTime
                             ? new Date(
                                 d.pickupTime
                               ).toLocaleString()
@@ -207,40 +227,47 @@ export default function TrackPage() {
                         </div>
                         <div>
                           Address:{" "}
-                          {d.address
-                            ? d.address.slice(0, 30)
+                          {d?.address
+                            ? d.address.slice(
+                                0,
+                                30
+                              )
                             : "No address"}
                         </div>
                       </div>
 
                       {/* Progress */}
                       <div className="flex mt-4 gap-1">
-                        {statusSteps.map((step, i) => (
-                          <div
-                            key={step}
-                            className={`h-2 flex-1 rounded ${
-                              i <= currentStep
-                                ? "bg-green-500"
-                                : "bg-gray-300"
-                            }`}
-                          />
-                        ))}
+                        {statusSteps.map(
+                          (step, i) => (
+                            <div
+                              key={step}
+                              className={`h-2 flex-1 rounded ${
+                                i <= currentStep
+                                  ? "bg-green-500"
+                                  : "bg-gray-300"
+                              }`}
+                            />
+                          )
+                        )}
                       </div>
 
                       {/* Admin Controls */}
                       {user.role === "admin" &&
-                        d.status !==
+                        safeStatus !==
                           "delivered" && (
                           <div className="mt-4 flex gap-2">
                             {statusSteps
-                              .slice(currentStep + 1)
+                              .slice(
+                                currentStep + 1
+                              )
                               .map((next) => (
                                 <Button
                                   key={next}
                                   size="sm"
                                   variant="outline"
                                   onClick={() =>
-                                    updateDonationStatus(
+                                    updateDonationStatus?.(
                                       d.id,
                                       next
                                     )
@@ -248,8 +275,9 @@ export default function TrackPage() {
                                 >
                                   Mark as{" "}
                                   {
-                                    statusConfig[next]
-                                      .label
+                                    statusConfig[
+                                      next
+                                    ].label
                                   }
                                 </Button>
                               ))}
