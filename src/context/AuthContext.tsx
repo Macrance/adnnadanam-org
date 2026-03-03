@@ -94,6 +94,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signup = (data: Omit<User, 'id'> & { password: string }) => {
     if (users.find(u => u.email === data.email)) return false;
+    // Block admin role from signup
+    if (data.role === 'admin') data = { ...data, role: 'donor' };
     const newUser = { ...data, id: crypto.randomUUID() };
     setUsers(prev => [...prev, newUser]);
     const { password: _, ...u } = newUser;

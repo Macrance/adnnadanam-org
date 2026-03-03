@@ -1,13 +1,22 @@
+import { useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Users, Package, Heart, BarChart3, Truck, CheckCircle, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function AdminPage() {
   const { user, donations, allUsers, updateDonationStatus } = useAuth();
   const navigate = useNavigate();
 
-  if (!user || user.role !== 'admin') { navigate('/'); return null; }
+  useEffect(() => {
+    if (!user || user.role !== 'admin') {
+      toast.error('Access denied. Admin only.');
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
+
+  if (!user || user.role !== 'admin') return null;
 
   const pending = donations.filter(d => d.status === 'pending').length;
   const delivered = donations.filter(d => d.status === 'delivered').length;
