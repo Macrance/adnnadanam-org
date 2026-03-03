@@ -48,7 +48,7 @@ const testimonials = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { profile: user } = useAuth();
 
   return (
     <div>

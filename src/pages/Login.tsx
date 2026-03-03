@@ -4,16 +4,20 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, Eye, EyeOff } from 'lucide-react';
+import { Heart, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, profile } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Redirect if already logged in
+  if (profile) { navigate('/'); return null; }
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -25,10 +29,13 @@ export default function LoginPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    if (login(email, password)) {
+    setSubmitting(true);
+    const success = await login(email, password);
+    setSubmitting(false);
+    if (success) {
       toast.success('Welcome back!');
       navigate('/');
     } else {
@@ -60,13 +67,12 @@ export default function LoginPage() {
             </div>
             {errors.password && <p className="text-destructive text-xs mt-1">{errors.password}</p>}
           </div>
-          <Button type="submit" className="w-full bg-primary text-primary-foreground">Log In</Button>
+          <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={submitting}>
+            {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Logging in...</> : 'Log In'}
+          </Button>
         </form>
         <p className="text-center text-sm text-muted-foreground mt-6">
           Don't have an account? <Link to="/signup" className="text-primary font-medium hover:underline">Sign Up</Link>
-        </p>
-        <p className="text-center text-xs text-muted-foreground mt-2">
-          <Link to="/login" className="text-primary hover:underline">Forgot password?</Link>
         </p>
       </div>
     </div>

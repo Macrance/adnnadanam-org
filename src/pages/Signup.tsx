@@ -5,15 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Heart, Eye, EyeOff } from 'lucide-react';
+import { Heart, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SignupPage() {
-  const { signup } = useAuth();
+  const { signup, profile } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '', role: '', city: '' });
   const [showPw, setShowPw] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  if (profile) { navigate('/'); return null; }
 
   const set = (key: string, val: string) => setForm(p => ({ ...p, [key]: val }));
 
@@ -33,22 +36,24 @@ export default function SignupPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    const success = signup({
+    setSubmitting(true);
+    const result = await signup({
       name: form.name,
       email: form.email,
       phone: form.phone,
-      role: form.role as any,
+      role: form.role,
       city: form.city,
       password: form.password,
     });
-    if (success) {
-      toast.success('Account created! Welcome to Annadanam.');
-      navigate('/');
+    setSubmitting(false);
+    if (result.success) {
+      toast.success('Account created! Please check your email to verify.');
+      navigate('/login');
     } else {
-      toast.error('Email already registered');
+      toast.error(result.error || 'Signup failed');
     }
   };
 
@@ -108,7 +113,9 @@ export default function SignupPage() {
             <Input type="password" value={form.confirm} onChange={e => set('confirm', e.target.value)} placeholder="Repeat password" />
             {errors.confirm && <p className="text-destructive text-xs mt-1">{errors.confirm}</p>}
           </div>
-          <Button type="submit" className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90">Create Account</Button>
+          <Button type="submit" className="w-full bg-secondary text-secondary-foreground hover:bg-secondary/90" disabled={submitting}>
+            {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating Account...</> : 'Create Account'}
+          </Button>
         </form>
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account? <Link to="/login" className="text-primary font-medium hover:underline">Log In</Link>

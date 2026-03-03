@@ -1,42 +1,47 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Session, User as SupaUser } from '@supabase/supabase-js';
 
-export interface User {
+export interface Profile {
   id: string;
+  user_id: string;
   name: string;
   email: string;
   phone: string;
   role: 'donor' | 'recipient' | 'admin' | 'volunteer';
   city?: string;
-  avatar?: string;
+  avatar_url?: string;
 }
 
 export interface Donation {
   id: string;
-  donorId: string;
-  donorName: string;
-  foodType: string;
+  donor_id: string;
+  donor_name: string;
+  food_type: string;
   quantity: number;
-  pickupTime: string;
+  pickup_time: string;
   address: string;
-  specialInstructions?: string;
-  imageUrl?: string;
+  special_instructions?: string;
+  image_url?: string;
   status: 'pending' | 'picked' | 'in_transit' | 'delivered';
-  createdAt: string;
-  recipientId?: string;
-  recipientName?: string;
-  trackingLat?: number;
-  trackingLng?: number;
+  created_at: string;
+  recipient_id?: string;
+  recipient_name?: string;
+  volunteer_id?: string;
 }
 
 interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => boolean;
-  signup: (data: Omit<User, 'id'> & { password: string }) => boolean;
-  logout: () => void;
+  session: Session | null;
+  profile: Profile | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (data: { name: string; email: string; phone: string; password: string; role: string; city: string }) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   donations: Donation[];
-  addDonation: (d: Omit<Donation, 'id' | 'createdAt' | 'status'>) => void;
-  updateDonationStatus: (id: string, status: Donation['status']) => void;
-  allUsers: User[];
+  addDonation: (d: Omit<Donation, 'id' | 'created_at' | 'status'>) => Promise<void>;
+  updateDonationStatus: (id: string, status: Donation['status']) => Promise<void>;
+  allProfiles: Profile[];
+  refreshDonations: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -47,86 +52,167 @@ export const useAuth = () => {
   return ctx;
 };
 
-const USERS_KEY = 'annadanam_users';
-const CURRENT_KEY = 'annadanam_current';
-const DONATIONS_KEY = 'annadanam_donations';
-
-// Seed admin
-const seedUsers = (): (User & { password: string })[] => {
-  const stored = localStorage.getItem(USERS_KEY);
-  if (stored) return JSON.parse(stored);
-  const admin = {
-    id: 'admin-1',
-    name: 'Admin',
-    email: 'admin@annadanam.org',
-    phone: '+918087826047',
-    role: 'admin' as const,
-    password: 'admin123',
-  };
-  localStorage.setItem(USERS_KEY, JSON.stringify([admin]));
-  return [admin];
-};
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [users, setUsers] = useState<(User & { password: string })[]>(seedUsers);
-  const [user, setUser] = useState<User | null>(() => {
-    const c = localStorage.getItem(CURRENT_KEY);
-    return c ? JSON.parse(c) : null;
-  });
-  const [donations, setDonations] = useState<Donation[]>(() => {
-    const d = localStorage.getItem(DONATIONS_KEY);
-    return d ? JSON.parse(d) : [];
-  });
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [donations, setDonations] = useState<Donation[]>([]);
+  const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
 
-  useEffect(() => { localStorage.setItem(USERS_KEY, JSON.stringify(users)); }, [users]);
-  useEffect(() => { localStorage.setItem(DONATIONS_KEY, JSON.stringify(donations)); }, [donations]);
-
-  const login = (email: string, password: string) => {
-    const found = users.find(u => u.email === email && u.password === password);
-    if (found) {
-      const { password: _, ...u } = found;
-      setUser(u);
-      localStorage.setItem(CURRENT_KEY, JSON.stringify(u));
-      return true;
-    }
-    return false;
+  // Fetch profile for a user
+  const fetchProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    if (data) setProfile(data as Profile);
+    return data as Profile | null;
   };
 
-  const signup = (data: Omit<User, 'id'> & { password: string }) => {
-    if (users.find(u => u.email === data.email)) return false;
-    // Block admin role from signup
-    if (data.role === 'admin') data = { ...data, role: 'donor' };
-    const newUser = { ...data, id: crypto.randomUUID() };
-    setUsers(prev => [...prev, newUser]);
-    const { password: _, ...u } = newUser;
-    setUser(u);
-    localStorage.setItem(CURRENT_KEY, JSON.stringify(u));
-    return true;
+  // Fetch donations
+  const refreshDonations = async () => {
+    const { data } = await supabase
+      .from('donations')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (data) setDonations(data as Donation[]);
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(CURRENT_KEY);
+  // Fetch all profiles (for admin)
+  const fetchAllProfiles = async () => {
+    const { data } = await supabase.from('profiles').select('*');
+    if (data) setAllProfiles(data as Profile[]);
   };
 
-  const addDonation = (d: Omit<Donation, 'id' | 'createdAt' | 'status'>) => {
-    const donation: Donation = {
-      ...d,
-      id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-    };
-    setDonations(prev => [...prev, donation]);
+  // Auth state listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setSession(session);
+      if (session?.user) {
+        // Use setTimeout to avoid Supabase deadlock
+        setTimeout(async () => {
+          await fetchProfile(session.user.id);
+          await refreshDonations();
+          await fetchAllProfiles();
+          setLoading(false);
+        }, 0);
+      } else {
+        setProfile(null);
+        setDonations([]);
+        setAllProfiles([]);
+        setLoading(false);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchProfile(session.user.id).then(() => {
+          refreshDonations();
+          fetchAllProfiles();
+          setLoading(false);
+        });
+      } else {
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Realtime subscription for donations
+  useEffect(() => {
+    const channel = supabase
+      .channel('donations-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'donations' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setDonations(prev => [payload.new as Donation, ...prev]);
+        } else if (payload.eventType === 'UPDATE') {
+          const updated = payload.new as Donation;
+          setDonations(prev => prev.map(d => d.id === updated.id ? updated : d));
+          // Show toast for status updates
+          import('sonner').then(({ toast }) => {
+            const statusLabels: Record<string, string> = {
+              picked: '📦 Food has been picked up!',
+              in_transit: '🚚 Food is in transit!',
+              delivered: '✅ Food has been delivered!',
+            };
+            if (statusLabels[updated.status]) {
+              toast.info(statusLabels[updated.status], {
+                description: `${updated.food_type} · ${updated.quantity} servings`,
+              });
+            }
+          });
+        } else if (payload.eventType === 'DELETE') {
+          setDonations(prev => prev.filter(d => d.id !== (payload.old as any).id));
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return !error;
   };
 
-  const updateDonationStatus = (id: string, status: Donation['status']) => {
-    setDonations(prev => prev.map(d => d.id === id ? { ...d, status } : d));
+  const signup = async (data: { name: string; email: string; phone: string; password: string; role: string; city: string }) => {
+    // Block admin role
+    const role = data.role === 'admin' ? 'donor' : data.role;
+    const { error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          name: data.name,
+          phone: data.phone,
+          role,
+          city: data.city,
+        },
+        emailRedirectTo: window.location.origin,
+      },
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
   };
 
-  const allUsers = users.map(({ password: _, ...u }) => u);
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const addDonation = async (d: Omit<Donation, 'id' | 'created_at' | 'status'>) => {
+    await supabase.from('donations').insert({
+      donor_id: d.donor_id,
+      donor_name: d.donor_name,
+      food_type: d.food_type,
+      quantity: d.quantity,
+      pickup_time: d.pickup_time,
+      address: d.address,
+      special_instructions: d.special_instructions || null,
+      image_url: d.image_url || null,
+    });
+  };
+
+  const updateDonationStatus = async (id: string, status: Donation['status']) => {
+    await supabase.from('donations').update({ status }).eq('id', id);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, donations, addDonation, updateDonationStatus, allUsers }}>
+    <AuthContext.Provider value={{
+      session,
+      profile,
+      loading,
+      login,
+      signup,
+      logout,
+      donations,
+      addDonation,
+      updateDonationStatus,
+      allProfiles,
+      refreshDonations,
+    }}>
       {children}
     </AuthContext.Provider>
   );

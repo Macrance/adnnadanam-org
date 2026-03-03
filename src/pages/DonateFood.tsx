@@ -6,20 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Camera, Utensils } from 'lucide-react';
+import { Camera, Utensils, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function DonateFoodPage() {
-  const { user, addDonation } = useAuth();
+  const { profile, addDonation } = useAuth();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     foodType: '', quantity: '', pickupTime: '', address: '', specialInstructions: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  if (!user) { navigate('/login'); return null; }
+  if (!profile) { navigate('/login'); return null; }
 
   const set = (k: string, v: string) => setForm(p => ({ ...p, [k]: v }));
 
@@ -43,20 +44,22 @@ export default function DonateFoodPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    addDonation({
-      donorId: user.id,
-      donorName: user.name,
-      foodType: form.foodType,
+    setSubmitting(true);
+    await addDonation({
+      donor_id: profile.id,
+      donor_name: profile.name,
+      food_type: form.foodType,
       quantity: parseInt(form.quantity),
-      pickupTime: form.pickupTime,
+      pickup_time: form.pickupTime,
       address: form.address,
-      specialInstructions: form.specialInstructions,
-      imageUrl: imagePreview || undefined,
+      special_instructions: form.specialInstructions,
+      image_url: imagePreview || undefined,
     });
-    toast.success('Food donation posted! NGOs nearby will be notified.');
+    setSubmitting(false);
+    toast.success('Food donation posted! Volunteers nearby will be notified.');
     navigate('/track');
   };
 
@@ -75,7 +78,6 @@ export default function DonateFoodPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Image upload */}
             <div>
               <Label>Food Photo (optional)</Label>
               <div
@@ -134,8 +136,8 @@ export default function DonateFoodPage() {
               <Textarea value={form.specialInstructions} onChange={e => set('specialInstructions', e.target.value)} placeholder="Allergies, handling requirements, etc." rows={3} />
             </div>
 
-            <Button type="submit" className="w-full bg-primary text-primary-foreground" size="lg">
-              Submit Donation
+            <Button type="submit" className="w-full bg-primary text-primary-foreground" size="lg" disabled={submitting}>
+              {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Submitting...</> : 'Submit Donation'}
             </Button>
           </form>
         </div>
