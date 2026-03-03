@@ -66,7 +66,7 @@ export default function LoginPage() {
           Don't have an account? <Link to="/signup" className="text-primary font-medium hover:underline">Sign Up</Link>
         </p>
         <p className="text-center text-xs text-muted-foreground mt-2">
-          Admin: admin@annadanam.org / admin123
+          <Link to="/login" className="text-primary hover:underline">Forgot password?</Link>
         </p>
       </div>
     </div>
