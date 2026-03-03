@@ -20,7 +20,7 @@ const navItems = [
 ];
 
 export default function Header() {
-  const { user, logout } = useAuth();
+  const { profile, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -41,6 +41,11 @@ export default function Header() {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-card shadow-sm border-b border-border">
       <div className="container flex items-center justify-between py-4">
@@ -49,7 +54,6 @@ export default function Header() {
           Annadanam
         </Link>
 
-        {/* Desktop Nav */}
         <nav className="hidden md:flex items-center gap-6">
           {navItems.map(item => (
             <button
@@ -63,12 +67,12 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          {user ? (
+          {profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="gap-2">
                   <User className="h-4 w-4" />
-                  {user.name}
+                  {profile.name}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -81,24 +85,21 @@ export default function Header() {
                 <DropdownMenuItem onClick={() => navigate('/track')}>
                   <LayoutDashboard className="mr-2 h-4 w-4" /> Track Donations
                 </DropdownMenuItem>
-                {user.role === 'admin' && (
+                {profile.role === 'admin' && (
                   <DropdownMenuItem onClick={() => navigate('/admin')}>
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Admin Panel
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => { logout(); navigate('/'); }}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" /> Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <>
-              <Button variant="outline" onClick={() => navigate('/login')}>Login</Button>
-            </>
+            <Button variant="outline" onClick={() => navigate('/login')}>Login</Button>
           )}
         </div>
 
-        {/* Mobile menu */}
         <button className="md:hidden" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
@@ -116,16 +117,14 @@ export default function Header() {
             </button>
           ))}
           <div className="pt-3 border-t border-border space-y-2">
-            {user ? (
+            {profile ? (
               <>
                 <Button variant="outline" className="w-full" onClick={() => { setMobileOpen(false); navigate('/account'); }}>My Account</Button>
                 <Button variant="outline" className="w-full" onClick={() => { setMobileOpen(false); navigate('/track'); }}>Track Donations</Button>
-                <Button variant="destructive" className="w-full" onClick={() => { logout(); setMobileOpen(false); navigate('/'); }}>Logout</Button>
+                <Button variant="destructive" className="w-full" onClick={() => { handleLogout(); setMobileOpen(false); }}>Logout</Button>
               </>
             ) : (
-              <>
-                <Button variant="outline" className="w-full" onClick={() => { setMobileOpen(false); navigate('/login'); }}>Login</Button>
-              </>
+              <Button variant="outline" className="w-full" onClick={() => { setMobileOpen(false); navigate('/login'); }}>Login</Button>
             )}
           </div>
         </div>
