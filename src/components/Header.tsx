@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
-import { Heart, Menu, X, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, LayoutDashboard, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import NotificationBell from '@/components/NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +68,7 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
+          {profile && <NotificationBell />}
           {profile ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -81,6 +83,9 @@ export default function Header() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/donate-food')}>
                   <Heart className="mr-2 h-4 w-4" /> Donate Food
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/browse-food')}>
+                  <UtensilsCrossed className="mr-2 h-4 w-4" /> Browse Food
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/track')}>
                   <LayoutDashboard className="mr-2 h-4 w-4" /> Track Donations

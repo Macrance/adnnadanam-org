@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import DonateFood from "./pages/DonateFood";
 import DonateMoney from "./pages/DonateMoney";
 import Track from "./pages/Track";
+import BrowseFood from "./pages/BrowseFood";
 import Account from "./pages/Account";
 import Admin from "./pages/Admin";
 import FAQ from "./pages/FAQ";
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/donate-food" element={<DonateFood />} />
                 <Route path="/donate-money" element={<DonateMoney />} />
+                <Route path="/browse-food" element={<BrowseFood />} />
                 <Route path="/track" element={<Track />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/admin" element={<Admin />} />
