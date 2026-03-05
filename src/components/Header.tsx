@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { useState } from 'react';
-import { Heart, Menu, X, User, LogOut, LayoutDashboard, UtensilsCrossed } from 'lucide-react';
+import { Heart, Menu, X, User, LogOut, LayoutDashboard, UtensilsCrossed, Bike } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/NotificationBell';
 import {
@@ -90,6 +90,11 @@ export default function Header() {
                 <DropdownMenuItem onClick={() => navigate('/track')}>
                   <LayoutDashboard className="mr-2 h-4 w-4" /> Track Donations
                 </DropdownMenuItem>
+                {(profile.role === 'volunteer' || profile.role === 'admin') && (
+                  <DropdownMenuItem onClick={() => navigate('/volunteer')}>
+                    <Bike className="mr-2 h-4 w-4" /> Volunteer Dashboard
+                  </DropdownMenuItem>
+                )}
                 {profile.role === 'admin' && (
                   <DropdownMenuItem onClick={() => navigate('/admin')}>
                     <LayoutDashboard className="mr-2 h-4 w-4" /> Admin Panel

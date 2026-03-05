@@ -17,6 +17,7 @@ import Account from "./pages/Account";
 import Admin from "./pages/Admin";
 import FAQ from "./pages/FAQ";
 import NotFound from "./pages/NotFound";
+import VolunteerDashboard from "./pages/VolunteerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="/track" element={<Track />} />
                 <Route path="/account" element={<Account />} />
                 <Route path="/admin" element={<Admin />} />
+                <Route path="/volunteer" element={<VolunteerDashboard />} />
                 <Route path="/faq" element={<FAQ />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
