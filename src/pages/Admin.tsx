@@ -27,7 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
 const PIE_COLORS = ['hsl(146,50%,36%)', 'hsl(213,70%,59%)', 'hsl(18,100%,60%)', 'hsl(280,60%,55%)'];
 
 export default function AdminPage() {
-  const { profile, donations, allProfiles, updateDonationStatus } = useAuth();
+  const { profile, donations, allProfiles, updateDonationStatus, updateUserRole } = useAuth();
   const navigate = useNavigate();
   const [userSearch, setUserSearch] = useState('');
   const [donationSearch, setDonationSearch] = useState('');
