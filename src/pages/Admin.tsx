@@ -229,7 +229,27 @@ export default function AdminPage() {
                           </td>
                           <td className="py-3 text-muted-foreground">{u.email}</td>
                           <td className="py-3">
-                            <Badge variant="outline" className="capitalize text-xs">{u.role}</Badge>
+                            <Select
+                              value={u.role}
+                              onValueChange={async (newRole: Profile['role']) => {
+                                try {
+                                  await updateUserRole(u.user_id, u.id, newRole);
+                                  toast.success(`${u.name}'s role updated to ${newRole}`);
+                                } catch {
+                                  toast.error('Failed to update role');
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-8 w-[120px] text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="donor">Donor</SelectItem>
+                                <SelectItem value="recipient">Recipient</SelectItem>
+                                <SelectItem value="volunteer">Volunteer</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </td>
                           <td className="py-3 text-muted-foreground">{u.city || '-'}</td>
                           <td className="py-3 text-muted-foreground text-xs">
