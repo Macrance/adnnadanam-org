@@ -42,6 +42,7 @@ interface AuthContextType {
   updateDonationStatus: (id: string, status: Donation['status']) => Promise<void>;
   allProfiles: Profile[];
   refreshDonations: () => Promise<void>;
+  updateUserRole: (userId: string, profileId: string, newRole: Profile['role']) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
