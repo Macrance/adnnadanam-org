@@ -42,6 +42,7 @@ interface AuthContextType {
   updateDonationStatus: (id: string, status: Donation['status']) => Promise<void>;
   allProfiles: Profile[];
   refreshDonations: () => Promise<void>;
+  updateUserRole: (userId: string, profileId: string, newRole: Profile['role']) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -199,6 +200,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await supabase.from('donations').update({ status }).eq('id', id);
   };
 
+  const updateUserRole = async (userId: string, profileId: string, newRole: Profile['role']) => {
+    // Update profiles table
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ role: newRole })
+      .eq('id', profileId);
+    if (profileError) throw profileError;
+
+    // Update user_roles table
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .update({ role: newRole })
+      .eq('user_id', userId);
+    if (roleError) throw roleError;
+
+    // Update local state
+    setAllProfiles(prev => prev.map(p => p.id === profileId ? { ...p, role: newRole } : p));
+  };
+
   return (
     <AuthContext.Provider value={{
       session,
@@ -212,6 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       updateDonationStatus,
       allProfiles,
       refreshDonations,
+      updateUserRole,
     }}>
       {children}
     </AuthContext.Provider>

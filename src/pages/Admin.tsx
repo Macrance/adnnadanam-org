@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth, Profile } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Users, Package, Heart, AlertCircle, TrendingUp, Search,
   ArrowUpRight, ArrowDownRight, CheckCircle2, Clock, Truck, LayoutDashboard,
@@ -26,7 +27,7 @@ const STATUS_COLORS: Record<string, string> = {
 const PIE_COLORS = ['hsl(146,50%,36%)', 'hsl(213,70%,59%)', 'hsl(18,100%,60%)', 'hsl(280,60%,55%)'];
 
 export default function AdminPage() {
-  const { profile, donations, allProfiles, updateDonationStatus } = useAuth();
+  const { profile, donations, allProfiles, updateDonationStatus, updateUserRole } = useAuth();
   const navigate = useNavigate();
   const [userSearch, setUserSearch] = useState('');
   const [donationSearch, setDonationSearch] = useState('');
@@ -228,7 +229,27 @@ export default function AdminPage() {
                           </td>
                           <td className="py-3 text-muted-foreground">{u.email}</td>
                           <td className="py-3">
-                            <Badge variant="outline" className="capitalize text-xs">{u.role}</Badge>
+                            <Select
+                              value={u.role}
+                              onValueChange={async (newRole: Profile['role']) => {
+                                try {
+                                  await updateUserRole(u.user_id, u.id, newRole);
+                                  toast.success(`${u.name}'s role updated to ${newRole}`);
+                                } catch {
+                                  toast.error('Failed to update role');
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-8 w-[120px] text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="donor">Donor</SelectItem>
+                                <SelectItem value="recipient">Recipient</SelectItem>
+                                <SelectItem value="volunteer">Volunteer</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </td>
                           <td className="py-3 text-muted-foreground">{u.city || '-'}</td>
                           <td className="py-3 text-muted-foreground text-xs">
