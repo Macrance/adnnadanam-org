@@ -232,6 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       updateDonationStatus,
       allProfiles,
       refreshDonations,
+      updateUserRole,
     }}>
       {children}
     </AuthContext.Provider>
