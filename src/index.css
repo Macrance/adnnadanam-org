@@ -98,7 +98,7 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
-    font-family: 'Plus Jakarta Sans', sans-serif;
+   @apply bg-background text-foreground font-sans;
+font-family: 'Plus Jakarta Sans', sans-serif;
   }
 }
